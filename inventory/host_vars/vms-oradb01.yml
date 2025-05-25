@@ -1,0 +1,4 @@
+---
+oracle_hostname: vms-oradb01
+oracle_host_ip: 172.20.1.203
+

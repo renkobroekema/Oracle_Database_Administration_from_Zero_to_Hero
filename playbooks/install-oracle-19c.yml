@@ -1,0 +1,26 @@
+---
+- name: Install Oracle Database 19c Software on Oracle Linux 8
+  hosts: vms-oradb01
+  become: yes
+  remote_user: beheerder
+
+  vars:
+    oracle_rpm: oracle-database-preinstall-19c
+    oracle_base: /u01/app/oracle
+    oracle_home: /u01/app/oracle/product/19.0.0/dbhome_1
+    oracle_inventory: /u01/app/oraInventory
+    oracle_user: oracle
+    oracle_group: oinstall
+    oracle_dba_group: dba
+    oracle_zip: LINUX.X64_193000_db_home.zip
+    oracle_hostname: vms-oradb01
+
+  pre_tasks:
+    - name: Install Oracle preinstall RPM
+      ansible.builtin.dnf:
+        name: "{{ oracle_rpm }}"
+        state: present
+
+  roles:
+    - oracle_install
+

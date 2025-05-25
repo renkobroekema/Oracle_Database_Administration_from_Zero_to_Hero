@@ -1,0 +1,7 @@
+---
+# handlers for oracle_install role
+
+- name: "reload oracle env"
+  ansible.builtin.command: source /home/{{ oracle_user }}/.bash_profile
+  become: yes
+  become_user: "{{ oracle_user }}"

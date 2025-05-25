@@ -1,0 +1,97 @@
+---
+- name: Create Oracle base directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - "{{ oracle_base }}"
+    - "{{ oracle_inventory }}"
+
+- name: Create Oracle software owner group
+  ansible.builtin.group:
+    name: "{{ oracle_group }}"
+    state: present
+
+- name: Create dba group
+  ansible.builtin.group:
+    name: "{{ oracle_dba_group }}"
+    state: present
+
+- name: Create Oracle user
+  ansible.builtin.user:
+    name: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+    groups: "{{ oracle_dba_group }}"
+    create_home: yes
+    home: "/home/{{ oracle_user }}"
+    shell: /bin/bash
+
+- name: Change ownership of Oracle directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+    recurse: yes
+  loop:
+    - "{{ oracle_base }}"
+    - "{{ oracle_inventory }}"
+
+- name: Copy Oracle 19c software ZIP from control node to remote host
+  ansible.builtin.copy:
+    src: "../roles/oracle_install/files/{{ oracle_zip }}"
+    dest: "/tmp/{{ oracle_zip }}"
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+    mode: '0644'
+
+- name: Create ORACLE_HOME directory
+  ansible.builtin.file:
+    path: "{{ oracle_home }}"
+    state: directory
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+    mode: '0755'
+
+- name: Unzip Oracle software into ORACLE_HOME
+  ansible.builtin.unarchive:
+    src: "/tmp/{{ oracle_zip }}"
+    dest: "{{ oracle_home }}"
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+    remote_src: yes
+
+- name: Set correct permissions on ORACLE_HOME
+  ansible.builtin.file:
+    path: "{{ oracle_home }}"
+    recurse: yes
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+
+- name: Create bash profile for Oracle user
+  ansible.builtin.blockinfile:
+    path: "/home/{{ oracle_user }}/.bash_profile"
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+    create: yes
+    block: |
+      # Oracle environment variables
+      export ORACLE_BASE={{ oracle_base }}
+      export ORACLE_HOME={{ oracle_home }}
+      export ORACLE_SID=
+      export PATH=$ORACLE_HOME/bin:$PATH
+      export LD_LIBRARY_PATH=$ORACLE_HOME/lib:$LD_LIBRARY_PATH
+
+- name: Verify Oracle software install - check oracle binary
+  ansible.builtin.stat:
+    path: "{{ oracle_home }}/bin/sqlplus"
+  register: sqlplus_stat
+
+- name: Fail if Oracle software not installed
+  ansible.builtin.fail:
+    msg: "Oracle installation failed, sqlplus binary not found"
+  when: not sqlplus_stat.stat.exists
+
