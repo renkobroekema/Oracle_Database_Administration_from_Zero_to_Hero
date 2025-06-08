@@ -1,0 +1,5 @@
+qm snapshot 112 oradb-noncdb --description "vms-oradb01 20250607"
+qm rollback 112 oradb-noncdb
+
+zfs list -t snapshot
+
