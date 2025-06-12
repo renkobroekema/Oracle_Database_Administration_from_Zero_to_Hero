@@ -1,5 +1,16 @@
-qm snapshot 112 oradb-noncdb --description "vms-oradb01 20250607"
-qm rollback 112 oradb-noncdb
+# Make snapshot
+qm snapshot 112 oradb-noncdb --description "vms-oradb01 20250608"
+qm snapshot 112 oradb-cdb --description "vms-oradb01 20250608"
 
+# List snapshot
 zfs list -t snapshot
+
+#root@proxmox:~# qm listsnapshot 112
+#`-> oradb-noncdb-db             2025-06-08 10:03:12     vms-oradb01 20250608
+# `-> oradb-cdb-db               2025-06-08 10:03:33     vms-oradb01 20250608
+#  `-> current                                           You are here!
+
+# shutdown VM
+qm rollback 112 oradb-cdb-db
+
 
